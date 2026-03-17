@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#0077ff" />
+  <title>Weather Forecast</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192x192.png" sizes="192x192" />
+</head>
+<body>
+  <header>
+    <h1>Weather Forecast</h1>
+    <button id="dark-mode-toggle" aria-label="Toggle dark mode">🌓</button>
+  </header>
+
+  <main>
+    <div class="search-box">
+      <input type="text" id="location-search" placeholder="Enter city name..." />
+      <button id="search-btn">🔍</button>
+    </div>
+
+    <p id="location">Loading...</p>
+    <div id="weather-info">
+      <p id="temperature">--°C</p>
+      <p id="description">Loading weather...</p>
+    </div>
+    <div id="forecast"></div>
+  </main>
+
+  <footer>
+    <p>Powered by Open-Meteo & geocoding API</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.error('SW registration failed:', err));
+    }
+  </script>
+</body>
+</html>
