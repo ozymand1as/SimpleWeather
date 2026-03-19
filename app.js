@@ -4,6 +4,7 @@ const DEFAULT_LAT = 51.5074;  // London
 const DEFAULT_LON = -0.1278;
 const CACHE_NAME = 'weather-app-v2';
 const DATA_CACHE_NAME = 'weather-data-cache-v1';
+let currentWeatherData = null;
 
 // === INIT APP ===
 async function initApp() {
@@ -35,6 +36,18 @@ async function initApp() {
     Notification.requestPermission().then(perm => {
       if (perm === 'granted') {
         registerPeriodicSync();
+      }
+    });
+  }
+
+  // Modal event listeners
+  const overlay = document.getElementById('weather-modal-overlay');
+  const closeBtn = document.getElementById('close-modal-btn');
+  if (overlay && closeBtn) {
+    closeBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModal();
       }
     });
   }
@@ -101,12 +114,13 @@ async function fetchWeather(lat, lon, city) {
 
   try {
     const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=6`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&hourly=temperature_2m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=6`
     );
 
     if (!response.ok) throw new Error('Weather API error');
 
     const data = await response.json();
+    currentWeatherData = data;
     updateUI(data, city);
 
     // Save last used location
@@ -125,6 +139,7 @@ async function fetchWeather(lat, lon, city) {
       const cached = await cache.match(url);
       if (cached) {
         const data = await cached.json();
+        currentWeatherData = data;
         updateUI(data, city);
         descEl.textContent += ' (cached)';
       } else {
@@ -158,6 +173,7 @@ function updateUI(data, city) {
 
     const dayCard = document.createElement('div');
     dayCard.className = 'day-card';
+    dayCard.addEventListener('click', () => openModal(i, dayName));
     dayCard.innerHTML = `
       <div class="day-name">${dayName}</div>
       <div class="high-temp">${high}°</div>
@@ -240,6 +256,103 @@ async function registerPeriodicSync() {
   } catch (err) {
     console.error('Periodic sync failed:', err);
   }
+}
+
+// === MODAL & CHART LOGIC ===
+let hourlyChartInstance = null;
+
+function openModal(dayIndex, dayName) {
+  const overlay = document.getElementById('weather-modal-overlay');
+  const modalTitle = document.getElementById('modal-title');
+  
+  modalTitle.textContent = `${dayName} Hourly Forecast`;
+  
+  if (!currentWeatherData || !currentWeatherData.hourly) return;
+  
+  // Extract 24-hour data for the specific day
+  const startIndex = dayIndex * 24;
+  const endIndex = startIndex + 24;
+  
+  const hourlyTime = currentWeatherData.hourly.time.slice(startIndex, endIndex).map(t => {
+    const date = new Date(t);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  });
+  const hourlyTemp = currentWeatherData.hourly.temperature_2m.slice(startIndex, endIndex);
+  const hourlyPrecip = currentWeatherData.hourly.precipitation.slice(startIndex, endIndex);
+  
+  renderChart(hourlyTime, hourlyTemp, hourlyPrecip);
+  
+  overlay.classList.remove('hidden');
+}
+
+function closeModal() {
+  const overlay = document.getElementById('weather-modal-overlay');
+  overlay.classList.add('hidden');
+}
+
+function renderChart(labels, tempData, precipData) {
+  const ctx = document.getElementById('hourly-chart').getContext('2d');
+  
+  if (hourlyChartInstance) {
+    hourlyChartInstance.destroy();
+  }
+  
+  hourlyChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Temperature (°C)',
+          data: tempData,
+          borderColor: '#ff7300',
+          backgroundColor: 'rgba(255, 115, 0, 0.1)',
+          yAxisID: 'y',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'Precipitation (mm)',
+          data: precipData,
+          type: 'bar',
+          backgroundColor: 'rgba(0, 119, 255, 0.6)',
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Temp (°C)'
+          }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Precip (mm)'
+          },
+          grid: {
+            drawOnChartArea: false,
+          },
+          min: 0
+        }
+      }
+    }
+  });
 }
 
 // Load app on DOMContentLoaded

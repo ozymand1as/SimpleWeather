@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <base href="/SimpleWeather/">
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0077ff" />
   <title>Weather Forecast</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon-192x192.png" sizes="192x192" />
 </head>
+
 <body>
   <header>
     <h1>Weather Forecast</h1>
@@ -34,6 +36,19 @@
     <p>Powered by Open-Meteo & geocoding API</p>
   </footer>
 
+  <div id="weather-modal-overlay" class="hidden">
+    <div id="weather-modal" class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title">Hourly Forecast</h2>
+        <button id="close-modal-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <canvas id="hourly-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>
   <script>
     // Register service worker
@@ -44,4 +59,5 @@
     }
   </script>
 </body>
+
 </html>
