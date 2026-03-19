@@ -2,7 +2,7 @@
   "name": "Weather PWA",
   "short_name": "Weather",
   "description": "Simple weather forecast with dark mode and background updates",
-  "start_url": "/ozymand1as/SimpleWeather",
+  "start_url": "/ozymand1as/SimpleWeather/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0077cc",
