@@ -280,7 +280,10 @@ function openModal(dayIndex, dayName) {
   const hourlyTemp = currentWeatherData.hourly.temperature_2m.slice(startIndex, endIndex);
   const hourlyPrecip = currentWeatherData.hourly.precipitation.slice(startIndex, endIndex);
   
-  renderChart(hourlyTime, hourlyTemp, hourlyPrecip);
+  const isToday = (dayIndex === 0);
+  const currentHourIndex = isToday ? new Date().getHours() : -1;
+  
+  renderChart(hourlyTime, hourlyTemp, hourlyPrecip, currentHourIndex);
   
   overlay.classList.remove('hidden');
 }
@@ -290,12 +293,14 @@ function closeModal() {
   overlay.classList.add('hidden');
 }
 
-function renderChart(labels, tempData, precipData) {
+function renderChart(labels, tempData, precipData, currentHourIndex) {
   const ctx = document.getElementById('hourly-chart').getContext('2d');
   
   if (hourlyChartInstance) {
     hourlyChartInstance.destroy();
   }
+  
+  const barColors = precipData.map((_, i) => i < currentHourIndex ? 'rgba(136, 136, 136, 0.4)' : 'rgba(0, 119, 255, 0.6)');
   
   hourlyChartInstance = new Chart(ctx, {
     type: 'line',
@@ -307,6 +312,10 @@ function renderChart(labels, tempData, precipData) {
           data: tempData,
           borderColor: '#ff7300',
           backgroundColor: 'rgba(255, 115, 0, 0.1)',
+          segment: {
+            borderColor: ctx => ctx.p0DataIndex < currentHourIndex ? '#888888' : '#ff7300',
+            backgroundColor: ctx => ctx.p0DataIndex < currentHourIndex ? 'rgba(136, 136, 136, 0.1)' : 'rgba(255, 115, 0, 0.1)'
+          },
           yAxisID: 'y',
           tension: 0.4,
           fill: true
@@ -315,7 +324,7 @@ function renderChart(labels, tempData, precipData) {
           label: 'Precipitation (mm)',
           data: precipData,
           type: 'bar',
-          backgroundColor: 'rgba(0, 119, 255, 0.6)',
+          backgroundColor: barColors,
           yAxisID: 'y1'
         }
       ]
